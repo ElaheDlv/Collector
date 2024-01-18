@@ -1246,11 +1246,11 @@ class CameraManager(object):
             array = array[:, :, ::-1]
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
         if self.recording:
-            image.save_to_disk('_out/'+ str((ctime(time()))[-13:-5])+'.'+ str(image.frame)+'.png')
+            image.save_to_disk('_out/%08d' % image.frame +'.png')
             if steering_record_toggle== True:
                 with open('steering.csv', 'a', newline='') as file_command:
                     writer = csv.writer(file_command, delimiter='\t',lineterminator='\n',)
-                    writer.writerow(['Steer:',(ctime(time()))[-13:-5]+'.'+ str(image.frame), steer_record])
+                    writer.writerow(['Steer:','_out/%08d' % image.frame , steer_record])
             
 
 
