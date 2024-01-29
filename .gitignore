@@ -1,3 +1,10 @@
 *.png
 /_out
 *.csv
+*.jpg
+*.mp4
+*.MJPG
+*.sh
+*.avi
+add_condition.ipynb
+make_video.ipynb
