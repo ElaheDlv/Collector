@@ -1259,10 +1259,7 @@ class CameraManager(object):
             if steering_record_toggle== True:
                 with open('steering.csv', 'a', newline='') as file_command:
                     writer = csv.writer(file_command,lineterminator='\n',)
-                    writer.writerow(['image_%08d' % image.frame , steer_record])
-                    writer.writerow(['image_%08d' % image.frame , throttle_record])
-                    writer.writerow(['image_%08d' % image.frame , brake_record])
-                    writer.writerow(['image_%08d' % image.frame , gear_record])
+                    writer.writerow(['image_%08d' % image.frame , steer_record,throttle_record,brake_record,gear_record])
             
 
 
