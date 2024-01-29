@@ -147,13 +147,16 @@ except ImportError:
  
 with open('steering.csv', 'w', newline='') as file_command:
     writer = csv.writer(file_command,lineterminator='\n',)
-    writer.writerow(['Image_Fname',"Steering"])
+    writer.writerow(['Image_Fname',"Steering","Throttle","Brake","Gear"])
     file_command.close()
 
 
 
 steering_record_toggle = False
 steer_record = 0
+throttle_record = 0
+brake_record = 0
+gear_record = 0
 # ==============================================================================
 # -- Global functions ----------------------------------------------------------
 # ==============================================================================
@@ -709,6 +712,9 @@ class HUD(object):
     def tick(self, world, clock):
         self._notifications.tick(world, clock)
         global steer_record
+        global throttle_record
+        global brake_record
+        global gear_record
         if not self._show_info:
             return
         t = world.player.get_transform()
@@ -750,6 +756,9 @@ class HUD(object):
                 ('Manual:', c.manual_gear_shift),
                 'Gear:        %s' % {-1: 'R', 0: 'N'}.get(c.gear, c.gear)]
             steer_record = c.steer
+            throttle_record = c.throttle
+            brake_record = c.brake
+            gear_record = c.gear
 
             if self._show_ackermann_info:
                 self._info_text += [
@@ -1251,6 +1260,9 @@ class CameraManager(object):
                 with open('steering.csv', 'a', newline='') as file_command:
                     writer = csv.writer(file_command,lineterminator='\n',)
                     writer.writerow(['image_%08d' % image.frame , steer_record])
+                    writer.writerow(['image_%08d' % image.frame , throttle_record])
+                    writer.writerow(['image_%08d' % image.frame , brake_record])
+                    writer.writerow(['image_%08d' % image.frame , gear_record])
             
 
 
