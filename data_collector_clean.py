@@ -66,7 +66,8 @@ import glob
 import os
 import sys
 import csv
-from time import time, ctime
+#from time import time, ctime
+import time
 
 try:
     sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
@@ -135,6 +136,7 @@ try:
     from pygame.locals import K_w
     from pygame.locals import K_x
     from pygame.locals import K_z
+    #from pygame.locals import K_e
     from pygame.locals import K_MINUS
     from pygame.locals import K_EQUALS
 except ImportError:
@@ -147,16 +149,28 @@ except ImportError:
  
 with open('steering.csv', 'w', newline='') as file_command:
     writer = csv.writer(file_command,lineterminator='\n',)
-    writer.writerow(['Image_Fname',"Steering","Throttle","Brake","Gear"])
+    writer.writerow(['Image_Fname',"Steering","Throttle","Brake","Gear","Speed",'Location_x','Location_y','Location_z','waypoint_x','waypoint_y','waypoint_z'])
     file_command.close()
 
 
 
 steering_record_toggle = False
+time_glob_save = "hi"
 steer_record = 0
 throttle_record = 0
 brake_record = 0
 gear_record = 0
+speed_record = 0
+Location_x_record = 0
+Location_y_record = 0
+Location_z_record = 0
+Waypoint_x_record = 0
+Waypoint_y_record = 0
+Waypoint_z_record = 0
+
+#x_b = 0
+#y_b = 0
+#z_b = 0
 # ==============================================================================
 # -- Global functions ----------------------------------------------------------
 # ==============================================================================
@@ -482,6 +496,9 @@ class KeyboardControl(object):
                     if pygame.key.get_mods() & KMOD_CTRL:
                         index_ctrl = 9
                     world.camera_manager.set_sensor(event.key - 1 - K_0 + index_ctrl)
+                    #world.camera_manager.set_sensor(1)
+                    #world.camera_manager.set_sensor(6)
+ 
                 elif event.key == K_r and not (pygame.key.get_mods() & KMOD_CTRL):
                     if steering_record_toggle == False:
                         steering_record_toggle = True
@@ -510,6 +527,9 @@ class KeyboardControl(object):
                     # disable autopilot
                     self._autopilot_enabled = False
                     world.player.set_autopilot(self._autopilot_enabled)
+                    ### disabling traffic lights
+                    traffic_manager = client.get_trafficmanager()
+                    traffic_manager.ignore_lights_percentage(world.player,100)
                     world.hud.notification("Replaying file 'manual_recording.rec'")
                     # replayer
                     client.replay_file("manual_recording.rec", world.recording_start, 0, 0)
@@ -555,6 +575,9 @@ class KeyboardControl(object):
                                   "experience some issues with the traffic simulation")
                         self._autopilot_enabled = not self._autopilot_enabled
                         world.player.set_autopilot(self._autopilot_enabled)
+                        ### disabling traffic lights
+                        traffic_manager = client.get_trafficmanager()
+                        traffic_manager.ignore_lights_percentage(world.player,100)
                         world.hud.notification(
                             'Autopilot %s' % ('On' if self._autopilot_enabled else 'Off'))
                     elif event.key == K_l and pygame.key.get_mods() & KMOD_CTRL:
@@ -715,6 +738,13 @@ class HUD(object):
         global throttle_record
         global brake_record
         global gear_record
+        global speed_record
+        global Location_x_record
+        global Location_y_record
+        global Location_z_record
+        global Waypoint_x_record
+        global Waypoint_y_record
+        global Waypoint_z_record
         if not self._show_info:
             return
         t = world.player.get_transform()
@@ -759,7 +789,14 @@ class HUD(object):
             throttle_record = c.throttle
             brake_record = c.brake
             gear_record = c.gear
-
+            speed_record = 3.6 * math.sqrt(v.x**2 + v.y**2 + v.z**2)
+            Location_x_record = t.location.x
+            Location_y_record = t.location.y
+            Location_z_record = t.location.z
+            waypoint  = world.map.get_waypoint(t.location, project_to_road=True, lane_type=carla.LaneType.Driving)
+            Waypoint_x_record = waypoint.transform.location.x
+            Waypoint_y_record = waypoint.transform.location.y
+            Waypoint_z_record = waypoint.transform.location.z
             if self._show_ackermann_info:
                 self._info_text += [
                     '',
@@ -1110,7 +1147,11 @@ class RadarSensor(object):
 
 class CameraManager(object):
     def __init__(self, parent_actor, hud, gamma_correction):
+        #global x_b
+        #global y_b
+        #global z_b
         self.sensor = None
+        self.sensor1 = None
         self.surface = None
         self._parent = parent_actor
         self.hud = hud
@@ -1118,6 +1159,9 @@ class CameraManager(object):
         bound_x = 0.5 + self._parent.bounding_box.extent.x
         bound_y = 0.5 + self._parent.bounding_box.extent.y
         bound_z = 0.5 + self._parent.bounding_box.extent.z
+        #x_b = bound_x
+        #y_b = bound_y
+        #z_b = bound_z
         Attachment = carla.AttachmentType
 
         if not self._parent.type_id.startswith("walker.pedestrian"):
@@ -1182,6 +1226,10 @@ class CameraManager(object):
         self.set_sensor(self.index, notify=False, force_respawn=True)
 
     def set_sensor(self, index, notify=True, force_respawn=False):
+        bound_x = 0.5 + self._parent.bounding_box.extent.x
+        bound_y = 0.5 + self._parent.bounding_box.extent.y
+        bound_z = 0.5 + self._parent.bounding_box.extent.z
+        Attachment = carla.AttachmentType
         index = index % len(self.sensors)
         needs_respawn = True if self.index is None else \
             (force_respawn or (self.sensors[index][2] != self.sensors[self.index][2]))
@@ -1191,13 +1239,31 @@ class CameraManager(object):
                 self.surface = None
             self.sensor = self._parent.get_world().spawn_actor(
                 self.sensors[index][-1],
+                #self.sensors[6][-1],
                 self._camera_transforms[self.transform_index][0],
                 attach_to=self._parent,
                 attachment_type=self._camera_transforms[self.transform_index][1])
+
+            def sem_callback(image):
+                #c = time.strftime("%Y-%m-%H-%M-%S",time.localtime(time.time()))
+                image.convert(carla.ColorConverter.CityScapesPalette)
+                if steering_record_toggle== True:
+                    #image.save_to_disk('seg/image_'+ time_glob_save +'_%08d'% image.frame +'.png')
+                    image.save_to_disk('seg/image_'+ time_glob_save +'.png')
+            self.sensor1 = self._parent.get_world().spawn_actor(
+                self.sensors[6][-1],
+                self._camera_transforms[self.transform_index][0],
+                #self._camera_transforms[self.transform_index][0],
+                #carla.Transform(carla.Location(x=+0.8*bound_x, y=+0.0*bound_y, z=1.3*bound_z),carla.Rotation(yaw=45.0)),
+                attach_to=self._parent,
+                attachment_type=self._camera_transforms[self.transform_index][1])
+                #attachment_type = Attachment.Rigid)
+            
             # We need to pass the lambda a weak reference to self to avoid
             # circular reference.
             weak_self = weakref.ref(self)
             self.sensor.listen(lambda image: CameraManager._parse_image(weak_self, image))
+            self.sensor1.listen(lambda image: sem_callback(image))
         if notify:
             self.hud.notification(self.sensors[index][2])
         self.index = index
@@ -1213,8 +1279,10 @@ class CameraManager(object):
         if self.surface is not None:
             display.blit(self.surface, (0, 0))
 
+
     @staticmethod
     def _parse_image(weak_self, image):
+        global time_glob_save
         self = weak_self()
         if not self:
             return
@@ -1255,12 +1323,29 @@ class CameraManager(object):
             array = array[:, :, ::-1]
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
         if self.recording:
+            '''
             image.save_to_disk('_out/image_%08d' % image.frame +'.png')
             if steering_record_toggle== True:
                 with open('steering.csv', 'a', newline='') as file_command:
                     writer = csv.writer(file_command,lineterminator='\n',)
                     writer.writerow(['image_%08d' % image.frame , steer_record,throttle_record,brake_record,gear_record])
-            
+            '''
+            c = time.strftime("%Y-%m-%H-%M-%S",time.localtime(time.time()))
+            time_glob_save = c +'_%08d'% image.frame
+            image.save_to_disk('_out/image_'+ c +'_%08d'% image.frame +'.png')
+            #image2=image.convert(carla.ColorConverter.CityScapesPalette)
+            #image2.save_to_disk('seg/image_'+ c +'_%08d'% image.frame +'.png')
+            #image.save_to_disk("/converted/image"+ c +'_%08d'% image.frame +'.png',carla.cityScapesPalette)
+            #image.save_to_disk('_out/image_%08d' % image.frame +'.png')
+            if steering_record_toggle== True:
+                #sensor_data['sem_image'].save_to_disk('seg/image_'+ c +'_%08d'% image.frame +'.png')
+                with open('steering.csv', 'a', newline='') as file_command:
+                    writer = csv.writer(file_command,lineterminator='\n',)
+                    #writer.writerow(['image_%08d' % image.frame , steer_record,throttle_record,brake_record,gear_record])
+                    writer.writerow(['image_'+ c +'_%08d'% image.frame , steer_record,throttle_record,brake_record,gear_record,speed_record,Location_x_record,Location_y_record,Location_z_record,Waypoint_x_record,Waypoint_y_record,Waypoint_z_record])
+                    
+
+
 
 
 # ==============================================================================

@@ -1,5 +1,7 @@
 *.png
 /_out
+/seg
+/road
 *.csv
 *.jpg
 *.mp4
