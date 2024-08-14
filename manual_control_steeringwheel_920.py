@@ -298,7 +298,7 @@ class DualControl(object):
                     else:
                         steering_record_toggle = False
                         world.camera_manager.toggle_recording()
-                    #world.camera_manager.toggle_recording()
+
                 if isinstance(self._control, carla.VehicleControl):
                     if event.key == K_q:
                         self._control.gear = 1 if self._control.reverse else -1
@@ -342,7 +342,6 @@ class DualControl(object):
     def _parse_vehicle_wheel(self):
         numAxes = self._joystick.get_numaxes()
         jsInputs = [float(self._joystick.get_axis(i)) for i in range(numAxes)]
-        # print (jsInputs)
         jsButtons = [float(self._joystick.get_button(i)) for i in
                      range(self._joystick.get_numbuttons())]
 
@@ -370,7 +369,6 @@ class DualControl(object):
         self._control.brake = brakeCmd
         self._control.throttle = throttleCmd
 
-        #toggle = jsButtons[self._reverse_idx]
 
         self._control.hand_brake = bool(jsButtons[self._handbrake_idx])
 
@@ -747,10 +745,8 @@ class CameraManager(object):
                 attach_to=self._parent)
             
             def sem_callback(image):
-                #c = time.strftime("%Y-%m-%H-%M-%S",time.localtime(time.time()))
                 image.convert(carla.ColorConverter.CityScapesPalette)
                 if steering_record_toggle== True:
-                    #image.save_to_disk('seg/image_'+ time_glob_save +'_%08d'% image.frame +'.png')
                     image.save_to_disk('seg/image_'+ time_glob_save +'.png')
             self.sensor1 = self._parent.get_world().spawn_actor(
                 self.sensors[5][-1],
@@ -804,23 +800,12 @@ class CameraManager(object):
             array = array[:, :, ::-1]
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
         if self.recording:
-            '''
-            c = time.strftime("%Y-%m-%H-%M-%S",time.localtime(time.time()))
-            image.save_to_disk('_out/image_'+ c +'_%08d'% image.frame +'.png')
-            #image.save_to_disk('_out/image_%08d' % image.frame +'.png')
-            if steering_record_toggle== True:
-                with open('steering.csv', 'a', newline='') as file_command:
-                    writer = csv.writer(file_command,lineterminator='\n',)
-                    #writer.writerow(['image_%08d' % image.frame , steer_record,throttle_record,brake_record,gear_record])
-                    writer.writerow(['image_'+ c +'_%08d'% image.frame , steer_record,throttle_record,brake_record,gear_record])
-            '''
             c = time.strftime("%Y-%m-%H-%M-%S",time.localtime(time.time()))
             time_glob_save = c +'_%08d'% image.frame
             image.save_to_disk('_out/image_'+ c +'_%08d'% image.frame +'.png')
             if steering_record_toggle== True:
                 with open('steering.csv', 'a', newline='') as file_command:
                     writer = csv.writer(file_command,lineterminator='\n',)
-                    #writer.writerow(['image_%08d' % image.frame , steer_record,throttle_record,brake_record,gear_record])
                     writer.writerow(['image_'+ c +'_%08d'% image.frame , steer_record,throttle_record,brake_record,gear_record])
         
 

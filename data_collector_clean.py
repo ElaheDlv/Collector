@@ -168,9 +168,7 @@ Waypoint_x_record = 0
 Waypoint_y_record = 0
 Waypoint_z_record = 0
 
-#x_b = 0
-#y_b = 0
-#z_b = 0
+
 # ==============================================================================
 # -- Global functions ----------------------------------------------------------
 # ==============================================================================
@@ -496,8 +494,7 @@ class KeyboardControl(object):
                     if pygame.key.get_mods() & KMOD_CTRL:
                         index_ctrl = 9
                     world.camera_manager.set_sensor(event.key - 1 - K_0 + index_ctrl)
-                    #world.camera_manager.set_sensor(1)
-                    #world.camera_manager.set_sensor(6)
+
  
                 elif event.key == K_r and not (pygame.key.get_mods() & KMOD_CTRL):
                     if steering_record_toggle == False:
@@ -1147,9 +1144,6 @@ class RadarSensor(object):
 
 class CameraManager(object):
     def __init__(self, parent_actor, hud, gamma_correction):
-        #global x_b
-        #global y_b
-        #global z_b
         self.sensor = None
         self.sensor1 = None
         self.surface = None
@@ -1159,9 +1153,6 @@ class CameraManager(object):
         bound_x = 0.5 + self._parent.bounding_box.extent.x
         bound_y = 0.5 + self._parent.bounding_box.extent.y
         bound_z = 0.5 + self._parent.bounding_box.extent.z
-        #x_b = bound_x
-        #y_b = bound_y
-        #z_b = bound_z
         Attachment = carla.AttachmentType
 
         if not self._parent.type_id.startswith("walker.pedestrian"):
@@ -1248,16 +1239,12 @@ class CameraManager(object):
                 #c = time.strftime("%Y-%m-%H-%M-%S",time.localtime(time.time()))
                 image.convert(carla.ColorConverter.CityScapesPalette)
                 if steering_record_toggle== True:
-                    #image.save_to_disk('seg/image_'+ time_glob_save +'_%08d'% image.frame +'.png')
                     image.save_to_disk('seg/image_'+ time_glob_save +'.png')
             self.sensor1 = self._parent.get_world().spawn_actor(
                 self.sensors[6][-1],
                 self._camera_transforms[self.transform_index][0],
-                #self._camera_transforms[self.transform_index][0],
-                #carla.Transform(carla.Location(x=+0.8*bound_x, y=+0.0*bound_y, z=1.3*bound_z),carla.Rotation(yaw=45.0)),
                 attach_to=self._parent,
                 attachment_type=self._camera_transforms[self.transform_index][1])
-                #attachment_type = Attachment.Rigid)
             
             # We need to pass the lambda a weak reference to self to avoid
             # circular reference.
@@ -1323,25 +1310,14 @@ class CameraManager(object):
             array = array[:, :, ::-1]
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
         if self.recording:
-            '''
-            image.save_to_disk('_out/image_%08d' % image.frame +'.png')
-            if steering_record_toggle== True:
-                with open('steering.csv', 'a', newline='') as file_command:
-                    writer = csv.writer(file_command,lineterminator='\n',)
-                    writer.writerow(['image_%08d' % image.frame , steer_record,throttle_record,brake_record,gear_record])
-            '''
+
             c = time.strftime("%Y-%m-%H-%M-%S",time.localtime(time.time()))
             time_glob_save = c +'_%08d'% image.frame
             image.save_to_disk('_out/image_'+ c +'_%08d'% image.frame +'.png')
-            #image2=image.convert(carla.ColorConverter.CityScapesPalette)
-            #image2.save_to_disk('seg/image_'+ c +'_%08d'% image.frame +'.png')
-            #image.save_to_disk("/converted/image"+ c +'_%08d'% image.frame +'.png',carla.cityScapesPalette)
-            #image.save_to_disk('_out/image_%08d' % image.frame +'.png')
+
             if steering_record_toggle== True:
-                #sensor_data['sem_image'].save_to_disk('seg/image_'+ c +'_%08d'% image.frame +'.png')
                 with open('steering.csv', 'a', newline='') as file_command:
                     writer = csv.writer(file_command,lineterminator='\n',)
-                    #writer.writerow(['image_%08d' % image.frame , steer_record,throttle_record,brake_record,gear_record])
                     writer.writerow(['image_'+ c +'_%08d'% image.frame , steer_record,throttle_record,brake_record,gear_record,speed_record,Location_x_record,Location_y_record,Location_z_record,Waypoint_x_record,Waypoint_y_record,Waypoint_z_record])
                     
 
