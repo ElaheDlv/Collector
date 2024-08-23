@@ -8,5 +8,6 @@
 *.MJPG
 *.sh
 *.avi
+*.csv
 add_condition.ipynb
 make_video.ipynb
